@@ -1,0 +1,36 @@
+# macOS and Xcode personal state
+.DS_Store
+._*
+**/xcuserdata/
+*.xcuserstate
+
+# Generated build, test and profiling output
+/DerivedData/
+/build/
+*.xcarchive/
+*.xcresult/
+*.ipa
+*.dSYM/
+*.dSYM.zip
+*.mlmodelc/
+*.trace/
+
+# Local credentials and signing material
+*.mobileprovision
+*.provisionprofile
+*.p12
+*.p8
+*.pem
+.env
+.env.*
+!.env.example
+/Config/Local.xcconfig
+
+# Private data and experiments
+/Video_Lane_Test/Exported comma-separated values.csv
+/data/
+/runs/
+
+# Python verification cache
+__pycache__/
+*.py[cod]

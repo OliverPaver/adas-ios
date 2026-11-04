@@ -1,0 +1,38 @@
+{
+  "configurations" : [
+    {
+      "id" : "DC1E2545-66C1-4EF3-827E-97FBFD2B0EEB",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Video_Lane_Test.xcodeproj",
+      "identifier" : "B509EC0E2D777589006DC50C",
+      "name" : "Video_Lane_Test"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:Video_Lane_Test.xcodeproj",
+        "identifier" : "B509EC1E2D77758B006DC50C",
+        "name" : "Video_Lane_TestTests"
+      }
+    },
+    {
+      "enabled" : false,
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:Video_Lane_Test.xcodeproj",
+        "identifier" : "B509EC282D77758B006DC50C",
+        "name" : "Video_Lane_TestUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

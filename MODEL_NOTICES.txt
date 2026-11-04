@@ -1,0 +1,31 @@
+LaneNet Core ML conversion notice
+================================
+
+Applies to: Video_Lane_Test/LaneNet.mlpackage
+
+Upstream: MaybeShewill-CV/lanenet-lane-detection
+https://github.com/MaybeShewill-CV/lanenet-lane-detection
+Upstream copyright: Copyright 2018 Luo Yao
+Upstream licence: Apache License 2.0
+Included licence: LICENSES/LaneNet-Apache-2.0.txt
+
+Modification: Oliver Paver converted the maintainer-distributed BiSeNet V2
+TuSimple TensorFlow checkpoint (tusimple_lanenet.ckpt) to the Core ML model
+package used by this university project. The author confirmed this source and
+conversion on 4 November 2026. The retained artifact records TensorFlow 1.15.0
+and coremltools 8.2. The original conversion script and historical checkpoint
+hash have not been recovered; no numerical reconversion is claimed.
+
+The pretrained network and weights are attributed to the upstream work.
+TuSimple is credited for the upstream training dataset; its licence copy is
+included in LICENSES/TuSimple-Apache-2.0.txt.
+
+This converted artifact is carried with Apache 2.0 based on its confirmed
+origin in the maintainer's Apache-licensed distribution. The evidence and
+licence-scope interpretation are explained in THIRD_PARTY_NOTICES.md. This
+notice does not assert a separate weights-specific maintainer declaration.
+
+No model bytes were changed during portfolio preparation. MODEL_MANIFEST.json
+records the retained package files and their SHA-256 identities. This notice
+applies to LaneNet; it does not select a licence for the original app or the
+author-trained stop-sign model. No upstream endorsement is implied.

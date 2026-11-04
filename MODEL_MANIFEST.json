@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "description": "Preserved model artifacts used by the iOS application. Hashes identify files, not their redistribution rights.",
+  "files": [
+    {
+      "path": "Video_Lane_Test/LaneNet.mlpackage/Data/com.apple.CoreML/model.mlmodel",
+      "bytes": 237531,
+      "sha256": "1f97489e7772e0243f9530f9453b1cb996a2e795fd55431d916f3581ac50a1d4"
+    },
+    {
+      "path": "Video_Lane_Test/LaneNet.mlpackage/Data/com.apple.CoreML/weights/weight.bin",
+      "bytes": 4638912,
+      "sha256": "059de350b4be977ad08a9288faf458f09a6d402fea77936b5088579d2179049d"
+    },
+    {
+      "path": "Video_Lane_Test/LaneNet.mlpackage/Manifest.json",
+      "bytes": 617,
+      "sha256": "9939287646b79dd234c557fc8bedb739470072dcfe0ee70a711982581d2f288a"
+    },
+    {
+      "path": "Video_Lane_Test/Stop_sign_test3.mlmodel",
+      "bytes": 31750985,
+      "sha256": "f1efd43d9bc923fb775d9a043cd89c0767c77c03d28292f135736eef9443b95e"
+    }
+  ]
+}
