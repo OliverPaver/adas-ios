@@ -8,104 +8,215 @@
 
 Oliver Paver · The University of Manchester · BSc Computer Science · 2025
 
-[Demonstration](#demonstration) · [Implementation](#implementation) · [Build](#build-and-first-run) · [Documentation](#documentation)
+[Demonstration](#demonstration) · [System](#how-the-system-works) · [Build](#build-and-first-run) · [Documentation](#documentation)
 
-[![Lane overlay from the original project demonstration](assets/demo/lane-preview.gif)](assets/demo/lane-demo.mp4)
+<table>
+<tr>
+<td width="50%" align="center">
+<strong>Daylight lane tracking</strong><br>
+<a href="assets/demo/daylight.mp4"><img src="assets/demo/daylight.webp" alt="Recorded red and green lane estimates on a curved daylight road" width="100%"></a><br>
+<sub>Curves and changing lane geometry · 20 seconds</sub>
+</td>
+<td width="50%" align="center">
+<strong>Night-time lane tracking</strong><br>
+<a href="assets/demo/night.mp4"><img src="assets/demo/night.webp" alt="Recorded lane estimates on a road illuminated by vehicle headlamps" width="100%"></a><br>
+<sub>Low-light road footage · 12 seconds</sub>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center">
+<strong>Stop-sign recognition</strong><br>
+<a href="assets/demo/stop-sign.mp4"><img src="assets/demo/stop-sign.webp" alt="Recorded stop-sign approach with the original STOP warning region shown separately below the camera crop" width="100%"></a><br>
+<sub>Camera view and original warning region · 10 seconds</sub>
+</td>
+<td width="50%" align="center">
+<strong>Live navigation</strong><br>
+<a href="assets/demo/navigation.mp4"><img src="assets/demo/navigation.webp" alt="Recorded moving MapKit route with the original ETA, distance, GPS speed and navigation controls" width="100%"></a><br>
+<sub>Route tracking, GPS speed and controls · 20 seconds</sub>
+</td>
+</tr>
+</table>
+
+**Click a panel to open its MP4.** Each preview loops independently.
 
 </div>
 
-This third-year university project explores smartphone-based driver assistance.
-It combines a MapKit navigation interface with a camera-based perception pipeline:
-neural lane segmentation, instance clustering, robust curve fitting, and visual
-warnings. A separate video mode makes the lane pipeline available for recorded
-footage.
-
-The implementation is written in **Swift and Metal**. Core ML runs the bundled
-LaneNet and stop-sign models; Vision supplies human and animal recognition.
-The custom post-processing distributes work across the CPU and GPU while the
-interface displays the most recently available lane overlay.
-
 ## Demonstration
 
-**[Watch the lane demonstration](assets/demo/lane-demo.mp4)**
+These excerpts show the original **2025 application recording**, including its
+actual lane estimates and warning behavior. Daylight perception and navigation
+show the same drive; the night and stop-sign panels show separate excerpts.
+The stop-sign panel includes the historical warning icon, whose UI invocation
+is disabled in the current source. The [media guide](docs/DEMO.md) records the
+source timestamps, crops and differences from the current app.
 
-The clip is a cropped, muted excerpt of the original 2025 project presentation.
-It shows historical application output. It is not a new benchmark or evidence
-that every displayed frame received a new inference result. The
-[demonstration guide](docs/DEMO.md) records the source and editing boundaries.
+## Project overview
 
-## Implementation
+This project investigates how a standard iPhone can combine navigation with
+camera-based road perception, using its built-in camera and native machine-learning
+and graphics APIs. The engineering challenge is to turn neural-network outputs
+into useful lane geometry while sharing mobile compute resources with capture,
+mapping and presentation.
 
-- **Neural lane perception.** A converted LaneNet model produces a binary mask
-  and four-component pixel embeddings from a normalized 512 × 256 road crop.
-- **Custom GPU post-processing.** Metal kernels implement density-based
-  core-point clustering, batched cubic-model scoring and overlay rendering.
-  CPU code supplies morphology, hypothesis generation and least-squares refinement.
-- **Lane-departure heuristics.** Image-space lane geometry supports width
-  estimation, camera-center calibration and a debounced warning state.
-- **Stop-sign detection.** A Create ML model detects stop signs through Vision
-  in the live-camera pipeline.
-- **Native application integration.** AVFoundation capture, Photos video import,
-  MapKit directions and Core Location are brought together in a SwiftUI interface.
+The implementation combines learned segmentation and pixel embeddings with
+classical image processing, density clustering and robust curve fitting. It is
+written in **Swift and Metal**: Core ML runs the bundled LaneNet and stop-sign
+models, custom Metal kernels handle parts of the lane post-processing, and
+SwiftUI presents the result alongside MapKit navigation. A separate video mode
+runs the lane pipeline on a recording imported from Photos.
+
+The work was developed for the dissertation *Advanced Dynamic Road Hazard
+Detection with Navigation on a Mobile Platform*. The
+[design and report notes](docs/REPORT_ALIGNMENT.md) connect its objectives to the
+retained implementation and distinguish historical descriptions from current code.
+
+## What the project implements
+
+- **Lane perception from a monocular camera.** LaneNet identifies lane pixels and
+  provides embeddings that the application groups into individual lane instances.
+- **Custom CPU/GPU post-processing.** Mask cleanup, Metal density clustering,
+  batched cubic RANSAC scoring and overlay rendering turn model outputs into
+  left- and right-lane estimates.
+- **Lane-departure heuristics.** Learned image-space lane width, center calibration
+  and a debounced offset check produce a warning state.
+- **Stop-sign model integration.** A Create ML detector runs through Vision in
+  the live-camera path and publishes a detection state.
+- **Native application integration.** Camera capture, Photos video import,
+  destination search, route tracking and GPS speed display share one iOS interface.
 
 LaneNet supplies the pretrained segmentation/embedding network. The project work
-includes its iOS integration, post-processing and GPU kernels, warning logic,
-sign-model workflow, and application integration. See [model provenance](docs/MODELS.md)
-and [source provenance](PROVENANCE.md) for the attribution boundaries.
+includes its TensorFlow-to-Core-ML conversion, iOS integration, post-processing
+and GPU kernels, warning logic, sign-model workflow and application integration.
+It does not claim authorship of LaneNet or BiSeNet V2. See
+[model provenance](docs/MODELS.md) and [source provenance](PROVENANCE.md).
+
+## How the system works
+
+### From camera pixels to lane curves
+
+```mermaid
+flowchart LR
+    A[Camera or imported video] --> B[Road crop and LaneNet]
+    B --> C[Mask cleanup and instance clustering]
+    C --> D[Ego-lane selection and cubic fitting]
+    D --> E[Lane overlay]
+    D --> F[Departure state]
+```
+
+| Stage | What happens | Execution |
+| --- | --- | --- |
+| Prepare the image | Crop the bottom 60% of the frame, resize to 512 × 256 and normalize RGB to `[-1, 1]`. | CPU |
+| Infer lane pixels | LaneNet produces a binary lane mask and **four embedding values per pixel**. | Core ML |
+| Clean the mask | Apply 5 × 5 dilation/erosion and remove connected components smaller than 100 pixels. | CPU / Accelerate |
+| Separate lane instances | Find dense core points in embedding space and propagate labels through ten passes. | Metal |
+| Select and fit the ego lane | Choose the nearest lower-image cluster on each side; generate cubic hypotheses, score inliers and refine the best fit. | CPU sampling/solving, Metal scoring, CPU least squares |
+| Render the result | Rasterize curve segments, write colored points into a texture and composite the overlay onto the camera image. | CPU + Metal |
+
+The fitting stage uses `y = Ax³ + Bx² + Cx + D`. For each selected lane cluster,
+it targets 200 solvable RANSAC hypotheses in batches of 50. Metal scores each hypothesis against the lane points,
+and CPU code refits the winning inliers. This preserves curved lane geometry
+without treating every segmented pixel as part of the final boundary.
+The clustering is a custom **DBSCAN-style core-point implementation**, with fixed
+label-propagation passes and unassigned non-core points. The
+[architecture guide](docs/ARCHITECTURE.md#lane-pipeline) explains those semantics
+and maps each stage to its source file.
+
+### Frame scheduling on a mobile device
+
+Capture and lane inference are decoupled. A new frame replaces the pending frame,
+while the display combines the current image with the most recently available
+overlay. The pending queue holds one frame, allowing newer input to replace work
+that has not started. It does not mean that every displayed frame receives a new
+inference result. Overlay/geometry synchronization and cancellation remain
+[documented limitations](docs/LIMITATIONS.md#coordinate-and-state-consistency).
+
+### From lane geometry to a warning
+
+Departure monitoring works in the 512 × 256 model image. It samples the fitted
+curves at rows 180 and 200, learns lane width from stable observations and uses
+that width when one boundary is missing. After 20 qualifying updates, the mean
+lane midpoint calibrates the initial image-center estimate.
+
+The offset check compares the lane midpoint with that calibrated center. Its
+threshold is 0.4 times the lane half-width, followed by a five-call debounce.
+These are image-space heuristics, not a calibrated lateral distance or a fixed
+warning delay: repeated calls can use the same inference result. Exact constants
+are listed in [configuration](docs/CONFIGURATION.md).
+
+### Stop signs and navigation
+
+The live processor runs the stop-sign model every third camera callback. Vision
+returns detections, and the application accepts the trained label `"3"` at a
+confidence of at least 0.5. The live processor publishes a Boolean state; its visible
+navigation indicator is currently disabled. The historical clip above shows
+that indicator in the original demonstration build.
+
+MapKit supplies place autocomplete, automobile routes and the route overlay.
+The app selects the returned route with the shortest expected travel time,
+displays Core Location speed in mph and requests a new route when the position
+is more than 50 metres from its polyline. Starting navigation reveals the camera
+panel; stopping it returns to search. Perception runs on-device, while map search
+and directions use Apple services.
+
+An experimental human/animal path also tests bounding-box bottom-centers against
+a lane corridor. Its model-space/full-frame coordinate mismatch is unresolved,
+so it is presented as an implementation experiment rather than validated
+collision prediction.
+
+## Current scope
 
 | Capability | Navigation / live camera | Imported video |
 | --- | --- | --- |
 | Lane overlays | Implemented | Implemented |
 | Lane-departure state | Implemented | Implemented |
-| Stop-sign detection | Runs; visible indicator currently disabled | Not connected |
-| Human/animal lane-corridor heuristic | Experimental; coordinate mapping requires correction | Not connected |
-| Map search and directions | Implemented | Not applicable |
+| Stop-sign detection | Runs; visible indicator disabled | Not connected |
+| Human/animal lane-corridor heuristic | Experimental; coordinate mapping needs correction | Not connected |
+| Map search, route tracking and GPS speed | Implemented | Not applicable |
 
-This is a research prototype. The current code has known geometry, synchronization
-and test limitations. It has not been validated as a road-safety system. Read the
-[limitations](docs/LIMITATIONS.md) before interpreting its warnings.
+This is a research prototype, not a validated road-safety system. Fixed image-space
+assumptions, result synchronization, orientation handling and test quality limit
+what can be concluded from a successful demonstration. No current accuracy,
+throughput or coverage benchmark is claimed. Read the
+[limitations](docs/LIMITATIONS.md) for the specific implementation constraints.
 
 ## Build and first run
 
-The project targets **iOS 18.2+**. The clean simulator Release build has been
-verified with **Xcode 16.4 (16F6)** on Apple silicon. There are no external runtime
-package dependencies. The two model artifacts are included in this source
-snapshot and checked against [their manifest](MODEL_MANIFEST.json).
-
-The signed app was installed and launched on an **iPhone 16 Pro Max with iOS 27.0.1**.
-The owner confirmed a working live camera preview and navigation stop control,
-plus advancing imported video with lane overlays. These basic functional checks are recorded in
-[validation](docs/VALIDATION.md).
-
-All **16 enabled unit/integration tests pass** on an iOS 18.2 Simulator with
-Xcode 16.4. Departure-test fixtures were corrected against the existing algorithm;
-UI tests remain disabled in the original test plan. See the
-[test instructions](docs/SETUP.md#tests) and [validation scope](docs/VALIDATION.md).
-
-From the repository directory:
+The project targets **iOS 18.2+**. Simulator Release builds have been verified with
+**Xcode 16.4 (16F6)** locally and on GitHub Actions. There are no external runtime
+package dependencies. Both model artifacts are included and checked against
+[their manifest](MODEL_MANIFEST.json).
 
 ```bash
+git clone https://github.com/OliverPaver/adas-ios.git
+cd adas-ios
 python3 scripts/verify_models.py
 bash scripts/build.sh simulator
 open Video_Lane_Test.xcodeproj
 ```
 
-The Xcode project and scheme retain the name `Video_Lane_Test`. For a physical
-iPhone, select your own signing team and unique bundle identifiers. Choose the
-**Video** tab and import a road video from Photos to exercise the lane pipeline.
-The **Image** tab contains navigation and the live camera view, which appears
-after a route is started.
+The Xcode project and scheme retain the name `Video_Lane_Test`. For an iPhone,
+select your own signing team and unique bundle identifiers. Choose **Video** and
+import a road video from Photos to exercise the lane pipeline. The **Image** tab
+contains navigation and the live camera view, which appears after a route starts.
 
-Follow [setup and troubleshooting](docs/SETUP.md) for device signing, permissions,
-simulator constraints and test commands. [Validation](docs/VALIDATION.md) separates
-build checks from test results and physical-device verification. No current
-accuracy, throughput or coverage benchmark is claimed.
+The signed app was installed and launched on an **iPhone 16 Pro Max with iOS
+27.0.1**. The owner confirmed live preview, the navigation stop control and
+advancing imported video with lane overlays on the pre-maintenance baseline.
+The final maintained app was rebuilt, installed and launched successfully.
+
+All **16 enabled unit/integration tests passed** on an iOS 18.2 Simulator with
+Xcode 16.4. The suite includes smoke tests and weaker placeholder/timing-dependent
+checks; UI tests remain disabled in the original test plan. GitHub Actions checks
+model integrity and the Simulator build, not the test suite. The
+[validation record](docs/VALIDATION.md) separates those results and their limits.
+Follow [setup](docs/SETUP.md) for signing, permissions and troubleshooting.
 
 ## Documentation
 
 | Guide | Contents |
 | --- | --- |
-| [Architecture](docs/ARCHITECTURE.md) | Runtime flow, source map, model tensors and CPU/GPU responsibilities |
+| [Architecture](docs/ARCHITECTURE.md) | Runtime flow, source map, tensors and CPU/GPU responsibilities |
+| [Design and report notes](docs/REPORT_ALIGNMENT.md) | Project motivation, engineering choices and dissertation/code distinctions |
 | [Configuration](docs/CONFIGURATION.md) | Original thresholds, dimensions and timing controls |
 | [Setup](docs/SETUP.md) | Toolchain, models, signing, first run and troubleshooting |
 | [Models](docs/MODELS.md) | Artifact identities, preprocessing, labels and provenance |
