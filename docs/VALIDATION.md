@@ -31,7 +31,7 @@ they are separate from the original project's historical demonstration and repor
 | Live camera and navigation stop control | Passed, user-observed before maintenance | The owner confirmed that the live camera and navigation stop control both work after following the stationary navigation walkthrough |
 | Imported-video lane walkthrough | Passed, user-observed before maintenance | The owner confirmed that selected-video frames advance and lane overlays appear |
 | Historical media review | Completed | Selected excerpts contain actual recorded output and are labelled as historical |
-| Hosted GitHub Actions run | Not executed | A build-and-integrity workflow is supplied for future execution |
+| Hosted GitHub Actions run | Passed | [Initial snapshot run](https://github.com/OliverPaver/adas-ios/actions/runs/41941653242) verified model integrity and built Simulator Release with Xcode 16.4 on `macos-15`; it did not run the test suite |
 
 Builds produce warnings, including deprecated AVFoundation/SwiftUI calls and
 redundant Swift expressions. They are retained with the original source. No
@@ -166,7 +166,7 @@ The original algorithm and thresholds were not changed to satisfy the tests.
   corridor detections before interpreting the collision warning.
 - Verify orientation, model-result synchronization, cancellation, permissions and
   repeated video selections with controlled inputs.
-- Select the author's licence for original work before publication. LaneNet's
+- Select the author's licence for original work before a public release. LaneNet's
   source confirmation and conversion notice, and the TuSimple test-image licence
   and attribution, are recorded in the third-party notices.
 
