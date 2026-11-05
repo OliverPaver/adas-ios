@@ -1,51 +1,44 @@
-# Limitations and validation scope
+# Known limitations
 
-This repository presents the original university prototype and its implementation choices. The source combines substantial computer-vision and mobile engineering work, but it does not establish validated driving assistance, collision prediction or reliable operation across road conditions. The behavior below is documented so demonstrations and future improvements can be assessed accurately.
-
-## Feature boundaries
-
-| Area | Current boundary |
-| --- | --- |
-| Live camera | Runs lane processing, departure logic, stop-sign detection and an experimental human/animal corridor test. |
-| Selected video | Runs lane processing and departure logic only. |
-| Current-speed display | Shows Core Location's speed estimate in miles per hour. Negative reported speed values are clamped to zero. |
-| Stop indicator | Detection is implemented; the indicator call is commented out in the navigation UI. |
-| Corridor test | Tests object bounding-box bottom-centers against an image-space polygon. It does not estimate distance, motion, collision probability or time-to-collision. |
-| Navigation | Provides destination search, a route overlay, location/speed display and off-route recalculation. No spoken turn-by-turn instruction system is implemented. |
+This is the original university research prototype, with the maintenance changes
+listed in [PROVENANCE.md](../PROVENANCE.md). It has not been validated as a
+road-safety system or evaluated for current accuracy or throughput benchmarks.
 
 ## Coordinate and state consistency
 
-**Corridor geometry needs correction and validation.** [`LaneDetector`](../Video_Lane_Test/LaneDetector.swift) stores coefficients in a 512 × 256 image representing the bottom 60% of a frame. [`LaneCollisionManager`](../Video_Lane_Test/LaneCollision.swift) consumes those coefficients and the learned lane width as though they described a full 1280 × 720 frame. It does not apply the crop-offset and scale conversion. Its output should therefore be treated as experimental rather than evidence of correct obstacle localization.
+- **Corridor geometry:** lane coefficients describe the cropped 512 × 256 model
+  image, but the human/animal corridor code treats them as full-frame 1280 × 720
+  coordinates. That conversion needs correction before interpreting its output.
+- **Result synchronization:** overlays and left/right coefficients are read
+  separately. Display and warning checks may reuse an older inference result.
+- **Warning counters:** debounce counts calls, not distinct inferences. Missing
+  boundaries do not consistently reset counters, and left/right warning labels
+  need a directional fixture check. These thresholds do not establish a fixed
+  warning delay.
 
-**Asynchronous results can be stale or inconsistent.** Frame buffering and overlay access are protected by a queue, but normal reads and writes of the left/right polynomial properties are not synchronized as one result. Display and departure checks can reuse an older inference, and the two coefficients are not published atomically with the overlay or an inference timestamp.
+## Processing and media
 
-**Debounce counters count calls, not distinct inferences.** Departure logic can process the same polynomial result repeatedly. Early returns for unavailable boundaries do not reset the departure counter; analogous early returns leave the corridor counter unchanged. Consequently, the configured five- and three-call thresholds do not guarantee consecutive valid observations. The physical meaning of the left/right departure labels also requires a directional fixture check: the current labels follow the sign of lane-midpoint displacement relative to the calibrated image center.
+| Area | Limitation |
+| --- | --- |
+| Cubic fitting | Degenerate four-point samples can retry indefinitely. Fitting `y` as a function of `x` also struggles with near-vertical lanes. |
+| Clustering | All-pairs neighborhood work, ten in-place propagation passes and unassigned non-core points differ from converged standard DBSCAN. |
+| Lifecycle | The two-second wait timeout does not cancel processing; detector loops continue beyond capture shutdown and work can overlap. |
+| Resources and failures | GPU resources and image contexts are repeatedly created. Model/tensor assumptions and allocation failures need stronger handling; LaneNet load failure is fatal. |
+| Orientation and playback | Camera orientation is forced; video import ignores the track's preferred transform and schedules reads with a fixed delay rather than media timestamps. |
+| Video selection | The importer loads the whole clip into memory and lacks a complete cancellation/reset path when another clip is selected. Start with short landscape clips. |
 
-## Algorithm and resource limits
+Lane geometry has no camera-intrinsic calibration, perspective rectification or
+physical lane-width estimate. The crop and thresholds remain fixed.
 
-- **Degenerate RANSAC samples can stall processing.** The sampling loop retries until it has a full batch of solvable four-point cubics, without an attempt limit. A cluster with fewer than four distinct x coordinates cannot produce a valid sample. The two-second background timeout clears state but does not cancel this work.
-- **Clustering has custom semantics.** Non-core points remain unassigned, propagation stops after ten passes, and threads read and update the same label buffer in a pass. There is no convergence check or guarantee of equivalence to conventional DBSCAN. The all-pairs neighborhood checks also grow quadratically with the retained point count.
-- **The polynomial and thresholds are image-space assumptions.** Fitting y as a function of x can be problematic for near-vertical lanes. The pipeline has no camera-intrinsic calibration, perspective rectification or physical lane-width estimate. Crop, fitting and departure constants are fixed.
-- **Processing has no complete cancellation lifecycle.** Each lane detector starts an indefinite polling loop. Stopping camera capture does not stop that loop, and a timed-out pipeline can overlap subsequent work.
-- **GPU resources are recreated during processing.** Metal devices, command queues and compute pipeline states are created inside drawing, clustering and RANSAC methods. `CIContext` is also created per frame. The source does not implement constructor-level caching of these resources.
-- **Model failures and tensor assumptions need stronger handling.** LaneNet load failure triggers `fatalError`; a stop-model load failure disables that detector through an optional model. Output conversion assumes the expected Float32 tensor shapes and contiguous layout. Some GPU allocation failures are not fully checked before pointer use.
+## Feature and evaluation boundaries
 
-These are source-level findings, not measured performance results. The parameter values and algorithms are retained so any later repair can be evaluated against a clear baseline.
+The stop detector runs, but its visible indicator is disabled. Human/animal checks
+are an experimental corridor-occupancy heuristic, without distance or time-to-collision
+prediction. Imported-video mode runs only the lane pipeline and departure logic.
+Navigation uses Apple services and has no spoken turn-by-turn system.
 
-## Media and recognition limits
-
-The camera path forces an image orientation and aspect-fills to 1280 × 720. The video path does not apply the track's preferred transform, and frame scheduling uses a fixed delay rather than media timestamps. Different orientations and recording formats therefore require explicit testing.
-
-Video selection loads the entire recording into memory and writes it to a fixed temporary filename. The reader does not provide an explicit cancellation/reset boundary for replacing a video. Long recordings and rapid reselection need lifecycle and memory checks.
-
-Stop-sign detections do not include a general tracking or multi-frame confirmation system. Vision's animal request is an Apple-provided recognizer, not a custom model for every possible road animal.
-
-## Interpreting demonstrations and measurements
-
-A recorded demo shows behavior on that input and device. It does not establish detection accuracy, robustness, generalization or safe on-road behavior. The per-stage timing logs and 33 ms video scheduling delay do not establish end-to-end throughput or inference at 30 FPS.
-
-For reproducible evaluation, record the device, OS/Xcode versions, build configuration, model hashes, input clip and orientation, and measurement boundaries. Separate inference time, full lane-pipeline time, displayed-frame rate and result age. Accuracy claims require labeled data, a defined metric and a documented evaluation split. No such results should be inferred from the presence of detector classes or test files.
-
-## Improvements that preserve the baseline
-
-First establish controlled video fixtures and device behavior. Resource caching, clearer error reporting, bounded work and explicit lifecycle control can then be reviewed separately from algorithm changes. Coordinate conversion and synchronized inference results need focused correctness checks. Changes to clustering semantics, fitting direction, thresholds or calibration rules should be presented as new experiments, with the original implementation available for comparison.
+The historical clips and passing tests do not establish road robustness or
+comprehensive coverage. For future work, prioritize synchronized results, coordinate
+conversion, bounded processing and cancellation. Evaluate algorithm or threshold
+changes separately against the preserved baseline. See [VALIDATION.md](VALIDATION.md)
+for the checks actually completed.

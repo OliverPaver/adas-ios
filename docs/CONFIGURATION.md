@@ -1,30 +1,27 @@
 # Processing parameters
 
-The original implementation keeps its parameters in Swift and Metal source. This page records their current values; it is not a runtime configuration interface or a recommendation for other cameras and datasets. Pixel values refer to the 512 × 256 model image unless stated otherwise.
+Constants are defined in source. Pixels use the 512 × 256 model domain unless stated otherwise. Call counts may reuse inference results.
 
 ## Lane inference and post-processing
 
-Source: [`LaneDetector.swift`](../Video_Lane_Test/LaneDetector.swift), [`DBSCANKernel.metal`](../Video_Lane_Test/DBSCANKernel.metal) and [`CubicRANSACKernel.metal`](../Video_Lane_Test/CubicRANSACKernel.metal).
+Sources: [LaneDetector.swift](../Video_Lane_Test/LaneDetector.swift), [DBSCANKernel.metal](../Video_Lane_Test/DBSCANKernel.metal), [CubicRANSACKernel.metal](../Video_Lane_Test/CubicRANSACKernel.metal).
 
-| Parameter | Value | Role |
-| --- | --- | --- |
-| Bottom crop ratio | `0.60` | Retain the lower 60% of the frame. |
-| Model image size | `512 × 256` | Resize the crop without preserving its aspect ratio. |
-| RGB normalization | `(value - 127.5) / 127.5` | Convert 8-bit channels to approximately `[-1, 1]`. |
-| Binary-mask threshold | `> 0.5` | Select lane pixels. |
-| Morphology kernel | `5 × 5` | Dilation followed by erosion. |
-| Minimum component area | `100` pixels | Remove smaller eight-connected components. |
-| Embedding dimensions | `4` | Values gathered for each retained pixel. |
-| Clustering radius | `0.35` | Strict squared-distance comparison in embedding space. |
-| Minimum core-point neighborhood | `800` points | Neighborhood count includes the point itself. |
-| Label-propagation passes | `10` | Fixed number of GPU passes. |
-| Ego-cluster lower-region boundary | `Int(0.65 × height)` | Use points at or below this row to estimate a cluster's mean x. |
-| RANSAC hypotheses / batch | `200 / 50` | Target number of valid cubic models and number scored together. |
-| RANSAC inlier residual | `< 3.0` pixels | Absolute vertical residual from the cubic. |
-| Background pipeline wait | `2.0` seconds | Timeout of the wait; does not cancel the pipeline. |
-| Idle polling interval | `0.01` seconds | Sleep when no frame is pending. |
+| Parameter | Value |
+| --- | --- |
+| Bottom crop / resize | 60% / 512 × 256, stretched |
+| RGB normalization | `(value - 127.5) / 127.5` |
+| Mask threshold | >0.5 |
+| Morphology | Dilation then erosion; kernel below |
+| Minimum eight-connected component | 100 pixels |
+| Embedding dimensions | 4 |
+| Clustering radius / core neighborhood | 0.35, strict distance / ≥800 including self |
+| Label propagation | 10 passes |
+| Ego-cluster region | y ≥ `Int(0.65 × height)` |
+| RANSAC valid hypotheses / batch | 200 / 50 |
+| Inlier vertical residual | <3 pixels |
+| Pipeline wait / idle polling | 2 s (no cancellation) / 0.01 s |
 
-The declared morphology kernel is:
+Kernel:
 
 ```text
 0 0 1 0 0
@@ -36,33 +33,29 @@ The declared morphology kernel is:
 
 ## Departure and corridor state
 
-Sources: [`LaneDeparture.swift`](../Video_Lane_Test/LaneDeparture.swift) and [`LaneCollision.swift`](../Video_Lane_Test/LaneCollision.swift).
+Sources: [LaneDeparture.swift](../Video_Lane_Test/LaneDeparture.swift), [LaneCollision.swift](../Video_Lane_Test/LaneCollision.swift).
 
-| Parameter | Value | Role |
-| --- | --- | --- |
-| Departure domain | `512 × 256` | Coordinates of the lane polynomials. |
-| Look-ahead rows | `200`, `180` | Search the fitted curves for lane positions. |
-| Initial center x | `256` | Starting image-space vehicle-center estimate. |
-| Stable midpoint tolerance | `< 20` pixels | Qualify width updates and center calibration. |
-| Calibration count | `20` calls | Calibrate after qualifying stable calls. |
-| Width-history capacity | `10` samples per buffer | Both buffers receive the same averaged width. |
-| Polynomial y-search tolerance | `≤ 7` pixels | Accept the nearest sampled x when solving for a target y. |
-| Departure offset limit | `0.4 × half lane width` | Equivalent to 20% of the estimated lane width. |
-| Departure debounce | `5` qualifying calls | Subject to the stale-result and reset limitations. |
-| Corridor domain | `1280 × 720` | Currently differs from the supplied polynomial domain. |
-| Corridor top/bottom rows | `360`, `720` | Corners of the occupancy polygon. |
-| Corridor polynomial y-search tolerance | `< 5` pixels | Accept the nearest sampled x. |
-| Corridor debounce | `3` qualifying calls | Human/animal occupancy confirmation counter. |
+| Parameter | Value |
+| --- | --- |
+| Departure domain / initial center x | 512 × 256 / 256 |
+| Look-ahead rows | 200, 180 |
+| Stable midpoint tolerance / calibration | <20 pixels / 20 stable calls |
+| Width history | 10 samples each; both buffers receive same averaged width |
+| Polynomial y-search tolerance | ≤7 pixels |
+| Departure offset limit / debounce | 0.4 × half-width / 5 qualifying calls |
+| Corridor domain / top–bottom rows | 1280 × 720 / 360–720 |
+| Corridor y-search tolerance / debounce | <5 pixels / 3 qualifying calls |
+
+Corridor coordinates differ from supplied coefficients. See [limitations](LIMITATIONS.md) for coordinate and debounce behavior.
 
 ## Capture, signs and navigation
 
-| Parameter | Value | Source |
-| --- | --- | --- |
-| Camera preset / output image | `1280 × 720`, where supported | [`LiveProcessor.swift`](../Video_Lane_Test/LiveProcessor.swift) |
-| Stop-sign processing cadence | Every third captured frame | [`LiveProcessor.swift`](../Video_Lane_Test/LiveProcessor.swift) |
-| Stop-sign label / confidence | `"3"` / `≥ 0.5` | [`StopSignDetector.swift`](../Video_Lane_Test/StopSignDetector.swift) |
-| Video inter-read delay | `0.033` seconds | [`VideoProcessor.swift`](../Video_Lane_Test/VideoProcessor.swift) |
-| Destination-search debounce | `0.3` seconds | [`MapViewModel.swift`](../Video_Lane_Test/Maps/MapViewModel.swift) |
-| Off-route threshold | `> 50` metres from route polyline | [`MapViewModel.swift`](../Video_Lane_Test/Maps/MapViewModel.swift) |
+Sources: [LiveProcessor](../Video_Lane_Test/LiveProcessor.swift), [StopSignDetector](../Video_Lane_Test/StopSignDetector.swift), [VideoProcessor](../Video_Lane_Test/VideoProcessor.swift), [MapViewModel](../Video_Lane_Test/Maps/MapViewModel.swift).
 
-See [architecture](ARCHITECTURE.md) for how these values interact and [limitations](LIMITATIONS.md) for assumptions that should accompany any experiment changing them.
+| Parameter | Value |
+| --- | --- |
+| Camera preset / output | 1280 × 720 preset where supported; 1280 × 720 output |
+| Stop-sign cadence / label / confidence | Every third callback / `"3"` / ≥0.5 |
+| Video inter-read delay | 0.033 s |
+| Search debounce | 0.3 s |
+| Off-route threshold | >50 m from route polyline |
