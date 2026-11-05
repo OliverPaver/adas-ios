@@ -14,30 +14,30 @@ Oliver Paver · The University of Manchester · BSc Computer Science · 2025
 <tr>
 <td width="50%" align="center">
 <strong>Daylight lane tracking</strong><br>
-<a href="assets/demo/daylight.mp4"><img src="assets/demo/daylight.webp" alt="Recorded red and green lane estimates on a curved daylight road" width="100%"></a><br>
+<a href="https://github.com/OliverPaver/adas-ios/raw/refs/heads/main/assets/demo/daylight.mp4"><img src="assets/demo/daylight.webp" alt="Recorded red and green lane estimates on a curved daylight road" width="100%"></a><br>
 <sub>Curves and changing lane geometry · 20 seconds</sub>
 </td>
 <td width="50%" align="center">
 <strong>Night-time lane tracking</strong><br>
-<a href="assets/demo/night.mp4"><img src="assets/demo/night.webp" alt="Recorded lane estimates on a road illuminated by vehicle headlamps" width="100%"></a><br>
+<a href="https://github.com/OliverPaver/adas-ios/raw/refs/heads/main/assets/demo/night.mp4"><img src="assets/demo/night.webp" alt="Recorded lane estimates on a road illuminated by vehicle headlamps" width="100%"></a><br>
 <sub>Low-light road footage · 12 seconds</sub>
 </td>
 </tr>
 <tr>
 <td width="50%" align="center">
 <strong>Stop-sign recognition</strong><br>
-<a href="assets/demo/stop-sign.mp4"><img src="assets/demo/stop-sign.webp" alt="Recorded stop-sign approach with the original STOP warning region shown separately below the camera crop" width="100%"></a><br>
+<a href="https://github.com/OliverPaver/adas-ios/raw/refs/heads/main/assets/demo/stop-sign.mp4"><img src="assets/demo/stop-sign.webp" alt="Recorded stop-sign approach with the original STOP warning region shown separately below the camera crop" width="100%"></a><br>
 <sub>Camera view and original warning region · 10 seconds</sub>
 </td>
 <td width="50%" align="center">
 <strong>Live navigation</strong><br>
-<a href="assets/demo/navigation.mp4"><img src="assets/demo/navigation.webp" alt="Recorded moving MapKit route with the original ETA, distance, GPS speed and navigation controls" width="100%"></a><br>
+<a href="https://github.com/OliverPaver/adas-ios/raw/refs/heads/main/assets/demo/navigation.mp4"><img src="assets/demo/navigation.webp" alt="Recorded moving MapKit route with the original ETA, distance, GPS speed and navigation controls" width="100%"></a><br>
 <sub>Route tracking, GPS speed and controls · 20 seconds</sub>
 </td>
 </tr>
 </table>
 
-**Click a panel to open its MP4.** Each preview loops independently.
+**Click a panel to download its MP4.** Each preview loops independently.
 
 </div>
 

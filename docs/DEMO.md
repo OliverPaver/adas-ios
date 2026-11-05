@@ -2,16 +2,16 @@
 
 The README's four-panel overview uses authentic excerpts from the original
 **2025 university project presentation**. Each preview loops independently and
-links to a muted MP4 of the same duration. Daylight lanes and navigation show
+links directly to a muted MP4 download of the same duration. Daylight lanes and navigation show
 the same section of one drive; night lanes and stop-sign recognition are separate
 recorded examples, not simultaneous camera feeds.
 
-| Panel | Open the clip | What it shows |
+| Panel | Download the clip | What it shows |
 | --- | --- | --- |
-| Daylight lane tracking | [20-second MP4](../assets/demo/daylight.mp4) | Original red left-lane and green right-lane estimates on a curved road |
-| Night-time lane tracking | [12-second MP4](../assets/demo/night.mp4) | The lane overlay on a road illuminated by headlamps |
-| Stop-sign recognition | [10-second MP4](../assets/demo/stop-sign.mp4) | A stop-sign approach and a separate crop of the original warning region |
-| Live navigation | [20-second MP4](../assets/demo/navigation.mp4) | A moving route map with the original ETA, distance, GPS speed and navigation controls |
+| Daylight lane tracking | [20-second MP4](https://github.com/OliverPaver/adas-ios/raw/refs/heads/main/assets/demo/daylight.mp4) | Original red left-lane and green right-lane estimates on a curved road |
+| Night-time lane tracking | [12-second MP4](https://github.com/OliverPaver/adas-ios/raw/refs/heads/main/assets/demo/night.mp4) | The lane overlay on a road illuminated by headlamps |
+| Stop-sign recognition | [10-second MP4](https://github.com/OliverPaver/adas-ios/raw/refs/heads/main/assets/demo/stop-sign.mp4) | A stop-sign approach and a separate crop of the original warning region |
+| Live navigation | [20-second MP4](https://github.com/OliverPaver/adas-ios/raw/refs/heads/main/assets/demo/navigation.mp4) | A moving route map with the original ETA, distance, GPS speed and navigation controls |
 
 The stop panel preserves the recorded warning appearing and disappearing. Its
 inset is taken from the **same source frame** as the camera view. It is an original
